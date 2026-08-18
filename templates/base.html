@@ -91,6 +91,20 @@
         #results tr { border-bottom: 1px solid var(--pico-muted-border-color, #ced4da); }
         .feed-label { font-size: 0.75rem; opacity: 0.7; margin-top: 0.2rem; }
         .summary { font-size: 0.85rem; opacity: 0.7; margin-top: 0.3rem; }
+        /* Narrow screens: tables don't wrap, so stack raw rows as cards */
+        @media (max-width: 640px) {
+            #results table, #results tbody, #results tr, #results td { display: block; width: 100%; }
+            #results td { padding: 0; }
+            #results tr {
+                border: 1px solid var(--pico-muted-border-color, #ced4da);
+                border-left: 3px solid var(--pico-muted-border-color, #ccc);
+                border-radius: 6px;
+                margin-bottom: 0.5rem; padding: 0.6rem 0.8rem;
+                background: var(--pico-card-background-color, #fff);
+            }
+            #results td:first-child { margin-bottom: 0.4rem; }
+            #results td:nth-child(2) { font-size: 0.8rem; opacity: 0.75; margin-bottom: 0.2rem; }
+        }
 
         /* ── Release calendar ── */
         .cal-card {
@@ -111,8 +125,8 @@
         .cal-ref { color: var(--pico-muted-color, #888); }
         .ff-values {
             margin-left: auto;
-            display: inline-grid; grid-template-columns: repeat(3, minmax(5.5rem, auto));
-            gap: 0 0.9rem; font-family: monospace; font-size: 0.82em;
+            display: flex; flex-wrap: wrap; gap: 0.15rem 1.2rem;
+            font-family: monospace; font-size: 0.82em;
             background: color-mix(in srgb, #1565c0 12%, transparent);
             padding: 0.25rem 0.7rem; border-radius: 4px;
         }

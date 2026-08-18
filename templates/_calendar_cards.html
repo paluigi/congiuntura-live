@@ -26,9 +26,9 @@
 
             {% if is_ff and (r.actual or r.forecast or r.previous) %}
             <span class="ff-values">
-                {% if r.actual %}<span class="ff-actual">A: {{ r.actual }}</span>{% endif %}
-                {% if r.forecast %}<span>F: {{ r.forecast }}</span>{% endif %}
-                {% if r.previous %}<span>P: {{ r.previous }}</span>{% endif %}
+                {% if r.actual %}<span class="ff-actual">Actual: {{ r.actual }}</span>{% endif %}
+                {% if r.forecast %}<span>Forecast: {{ r.forecast }}</span>{% endif %}
+                {% if r.previous %}<span>Previous: {{ r.previous }}</span>{% endif %}
             </span>
             {% endif %}
         </div>
