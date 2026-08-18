@@ -4,7 +4,8 @@ This file is configuration: edit it to change what the LLM extracts.
 The LLM sees ONLY these fields. Link, date, and publisher are copied
 verbatim from the raw feed AFTER generation to prevent hallucination.
 
-The web UI auto-generates filter controls from the Literal types here.
+The web UI auto-generates filter controls from the Literal types here
+(list[Literal[...]] fields become multi-select tag filters).
 """
 
 from typing import Literal
@@ -19,7 +20,7 @@ class LLMExtraction(BaseModel):
     from the raw feed in ProcessedRelease.
     """
 
-    topic: Literal[
+    topics: list[Literal[
         "Consumer prices",
         "Producer prices",
         "Import prices",
@@ -35,7 +36,14 @@ class LLMExtraction(BaseModel):
         "Business surveys",
         "Other economic topics",
         "Non-economic topics",
-    ] = Field(description="Primary topic of the press release")
+    ]] = Field(
+        min_length=1,
+        description=(
+            "All topics the press release covers — topics are tags, not mutually "
+            "exclusive categories. Select every applicable topic (typically 1–3, "
+            "ordered by relevance)."
+        ),
+    )
 
     country: Literal[
         "Euro area",

@@ -27,7 +27,7 @@ def test_q_alone_builds_or_over_text_fields():
 def test_q_combines_with_select_and_date_filters():
     query = build_query({
         "publisher": ["istat", "eurostat"],
-        "topic": ["GDP"],
+        "topics": ["GDP", "Labour market"],
         "sentiment": ["positive"],
         "date_from": "2026-08-01T00:00:00+00:00",
         "date_to": "2026-08-18T00:00:00+00:00",
@@ -35,7 +35,8 @@ def test_q_combines_with_select_and_date_filters():
     })
 
     assert query["publisher"] == {"$in": ["istat", "eurostat"]}
-    assert query["topic"] == {"$in": ["GDP"]}
+    # topics is array-valued: $in matches docs containing ANY selected value (OR)
+    assert query["topics"] == {"$in": ["GDP", "Labour market"]}
     assert query["sentiment"] == {"$in": ["positive"]}
     assert query["published"] == {
         "$gte": "2026-08-01T00:00:00+00:00",

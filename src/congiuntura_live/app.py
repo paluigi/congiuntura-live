@@ -195,7 +195,7 @@ async def lifespan(app: FastAPI):
     logger.info("Application stopped")
 
 
-app = FastAPI(title="Congiuntura Live", version="0.5.2", lifespan=lifespan)
+app = FastAPI(title="Congiuntura Live", version="0.6.0", lifespan=lifespan)
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # Serve vendored static assets (htmx.min.js etc.)
@@ -266,20 +266,37 @@ templates.env.filters["cal_source_name"] = _cal_source_name
 # ── Model introspection for auto-generated filters ──────────
 
 
+def _literal_choices(annotation: Any) -> list[str] | None:
+    """Return the Literal choices of an annotation.
+
+    Accepts both ``Literal[...]`` (single-select semantics) and
+    ``list[Literal[...]]`` (multi-tag semantics); anything else → None.
+    """
+    origin = get_origin(annotation)
+    if origin is not None and hasattr(origin, "__name__") and origin.__name__ == "Literal":
+        return list(get_args(annotation))
+    if origin is list:
+        args = get_args(annotation)
+        if args:
+            inner_origin = get_origin(args[0])
+            if inner_origin is not None and inner_origin.__name__ == "Literal":
+                return list(get_args(args[0]))
+    return None
+
+
 def _build_filter_definitions() -> list[dict[str, Any]]:
     """Introspect the LLMExtraction model to build UI filter definitions.
 
-    Only Literal types become dropdown filters.  ``str`` fields
-    (summary_en, key_figures) are excluded — they are display-only.
+    Literal and list[Literal[...]] types become dropdown filters
+    (multi-select in the UI either way).  ``str`` fields (summary_en,
+    key_figures) are excluded — they are display-only.
     """
     if _extraction_model_class is None:
         return []
     filters: list[dict[str, Any]] = []
     for name, field_info in _extraction_model_class.model_fields.items():
-        annotation = field_info.annotation
-        origin = get_origin(annotation)
-        if origin is not None and hasattr(origin, "__name__") and origin.__name__ == "Literal":
-            choices = list(get_args(annotation))
+        choices = _literal_choices(field_info.annotation)
+        if choices:
             filters.append({"name": name, "type": "select", "choices": choices})
     return filters
 
@@ -361,7 +378,7 @@ def _parse_date(raw: str | None) -> str | None:
 async def search(
     request: Request,
     publisher: list[str] = Query(default=[]),
-    topic: list[str] = Query(default=[]),
+    topics: list[str] = Query(default=[]),
     country: list[str] = Query(default=[]),
     sentiment: list[str] = Query(default=[]),
     date_from: str = Query(default=""),
@@ -377,7 +394,7 @@ async def search(
     """
     repo = _get_repo()
     filters: dict[str, Any] = {}
-    for key, vals in (("publisher", publisher), ("topic", topic), ("country", country), ("sentiment", sentiment)):
+    for key, vals in (("publisher", publisher), ("topics", topics), ("country", country), ("sentiment", sentiment)):
         if vals:
             filters[key] = vals
     filters["date_from"] = _parse_date(date_from)

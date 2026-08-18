@@ -10,7 +10,7 @@
     <article class="card">
         <div class="card-header">
             <span class="badge {{ publisher_slug }}">{{ publisher }}</span>
-            <span class="topic">{{ r.topic }}</span>
+            {% for t in r.topics %}<span class="topic">{{ t }}</span>{% endfor %}
             <span class="country">{{ r.country }}</span>
             <span class="sentiment {{ sentiment_class }}">{{ sentiment }}</span>
         </div>

@@ -22,8 +22,9 @@ logger = logging.getLogger(__name__)
 _SYSTEM_PROMPT = (
     "You are an expert economic analyst specializing in euro-area macroeconomic statistics. "
     "Extract structured information from the following official statistics press release. "
-    "Classify the topic, identify the geographic scope, assess the economic sentiment, "
-    "write a concise English summary, and extract key numerical figures."
+    "Select all applicable topics (topics are tags, not mutually exclusive), identify the "
+    "geographic scope, assess the economic sentiment, write a concise English summary, "
+    "and extract key numerical figures."
 )
 
 
@@ -100,7 +101,7 @@ class ReleaseProcessor:
             # LLM metadata
             "processing_model": f"{result.provider}/{result.model}",
             # LLM-generated fields
-            "topic": extraction.topic,
+            "topics": list(dict.fromkeys(extraction.topics)),
             "country": extraction.country,
             "sentiment": extraction.sentiment,
             "title_en": extraction.title_en,
@@ -108,9 +109,9 @@ class ReleaseProcessor:
             "key_figures": extraction.key_figures,
         }
         logger.info(
-            "Processed %s → topic=%s, country=%s",
+            "Processed %s → topics=%s, country=%s",
             url[:60],
-            extraction.topic,
+            extraction.topics,
             extraction.country,
         )
         return processed

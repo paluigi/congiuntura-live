@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from pymongo import AsyncMongoClient
+from pymongo.errors import OperationFailure
 from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.asynchronous.database import AsyncDatabase
 
@@ -40,10 +41,14 @@ class PressReleaseRepository:
         await self._processed.create_index("publisher")
         await self._processed.create_index([("published", -1)])
         await self._processed.create_index([("publisher", 1), ("published", -1)])
-        await self._processed.create_index("topic")
+        await self._processed.create_index("topics")
         await self._processed.create_index("country")
         await self._processed.create_index("sentiment")
         await self._processed.create_index("processing_model")
+        try:
+            await self._processed.drop_index("topic_1")  # superseded by the topics index
+        except OperationFailure:
+            pass  # already gone (fresh database)
         logger.info(
             "MongoDB indexes ensured on '%s' and '%s'",
             RAW_COLLECTION,
@@ -176,8 +181,10 @@ class PressReleaseRepository:
     def _build_processed_query(filters: dict[str, Any] | None) -> dict[str, Any]:
         """Build a MongoDB query from frontend filter signals.
 
-        ``topic``, ``country``, ``sentiment``, ``publisher`` values are
-        lists — mapped to ``$in`` for multi-select OR semantics.
+        ``topics``, ``country``, ``sentiment``, ``publisher`` values are
+        lists — mapped to ``$in``. For the array-valued ``topics`` field
+        this matches documents containing ANY of the selected values
+        (multi-select OR semantics).
         ``q`` is a free-text fragment matched case-insensitively against
         the English title/summary and key figures.
         """
@@ -185,7 +192,7 @@ class PressReleaseRepository:
             return {}
         query: dict[str, Any] = {}
         for field, value in filters.items():
-            if field in ("publisher", "topic", "country", "sentiment"):
+            if field in ("publisher", "topics", "country", "sentiment"):
                 if isinstance(value, list):
                     if value:
                         query[field] = {"$in": value}

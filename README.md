@@ -395,6 +395,12 @@ MIT © Luigi Palumbo
 
 ## Change Log
 
+- **0.6.0**: Topics are now tags, not mutually exclusive categories — the LLM
+  extraction selects all applicable topics (typically 1–3) per release, stored
+  as the `topics` array. Home-page topic filter keeps OR semantics (a release
+  matches if it has any of the selected tags); cards show one chip per topic.
+  Breaking data-model change: reprocess existing releases after upgrading
+  (clear `processed_releases` and re-run extraction).
 - **0.5.2**: Free-text search on the home page — a search box in the filter bar
   matches case-insensitive text fragments against the English title, English
   summary and key figures of processed releases, combined with the existing
