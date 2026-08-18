@@ -16,7 +16,8 @@
             {% if r.impact %}
             <span class="impact-badge {{ r.impact }}">{{ r.impact }}</span>
             {% endif %}
-            {% if r.url and is_past %}
+            {# CSO links point to the PxStat machine API (ws.cso.ie), not a human-readable page #}
+            {% if r.url and is_past and r.source != 'cso' %}
                 <a href="{{ r.url }}" target="_blank" rel="noopener noreferrer">{{ r.title }}</a>
             {% else %}
                 {{ r.title }}
