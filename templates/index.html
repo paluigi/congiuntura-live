@@ -5,7 +5,12 @@
 {% set which = "press" %}
 {% include "_last_update.html" %}
 
-<form id="filter-form" class="search-bar">
+<form id="filter-form" class="search-bar"
+      hx-get="/search"
+      hx-trigger="submit"
+      hx-target="#results"
+      hx-include="this"
+      hx-swap="innerHTML">
     <div class="filter-hint" style="flex-basis: 100%; margin-bottom: 0;">
         Hold Ctrl/Cmd to select multiple items in the filters below.
     </div>

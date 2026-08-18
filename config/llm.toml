@@ -25,16 +25,21 @@ type = "openai"
 base_url = "https://api.groq.com/openai/v1"
 api_key_env = "GROQ_API_KEY"
 
+[providers.meta]
+type = "openai"
+base_url = "https://api.meta.ai/v1"
+api_key_env = "META_API_KEY"
+
 # ─── Cascades ────────────────────────────────────────────────
 # Tried in order: if the first fails, the next is attempted.
 
 [cascades.congiuntura]
 entries = [
-    
-    { provider = "groq", model = "openai/gpt-oss-120b" },
+    { provider = "meta", model = "muse-spark-1.2-contributor" },
     { provider = "llm7", model = "gpt-5.4-mini" },
     { provider = "groq", model = "qwen/qwen3.6-27b" },
     { provider = "llm7", model = "kimi-k3" },
+    { provider = "groq", model = "openai/gpt-oss-120b" },
     { provider = "llm7", model = "deepseek-ai/deepseek-v4-flash" },
     { provider = "groq", model = "openai/gpt-oss-20b" },
     { provider = "llm7", model = "deepseek-v4-flash" },

@@ -14,7 +14,7 @@ services:
 
   # ─── Application ───────────────────────────────────────────
   app:
-    image: paluigi/congiuntura-live:0.6.0
+    image: paluigi/congiuntura-live:0.6.1
     container_name: congiuntura-app
     restart: unless-stopped
     ports:

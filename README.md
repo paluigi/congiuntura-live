@@ -395,6 +395,10 @@ MIT © Luigi Palumbo
 
 ## Change Log
 
+- **0.6.1**: New LLM cascade — Meta `muse-spark-1.2-contributor` leads, previous
+  groq/llm7 fallbacks retained behind it. Pressing Enter in the home/raw search
+  forms now runs the htmx search instead of reloading the page and clearing
+  all filters.
 - **0.6.0**: Topics are now tags, not mutually exclusive categories — the LLM
   extraction selects all applicable topics (typically 1–3) per release, stored
   as the `topics` array. Home-page topic filter keeps OR semantics (a release

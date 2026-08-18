@@ -195,7 +195,7 @@ async def lifespan(app: FastAPI):
     logger.info("Application stopped")
 
 
-app = FastAPI(title="Congiuntura Live", version="0.6.0", lifespan=lifespan)
+app = FastAPI(title="Congiuntura Live", version="0.6.1", lifespan=lifespan)
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # Serve vendored static assets (htmx.min.js etc.)
