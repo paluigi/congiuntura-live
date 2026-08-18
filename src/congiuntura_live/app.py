@@ -195,7 +195,7 @@ async def lifespan(app: FastAPI):
     logger.info("Application stopped")
 
 
-app = FastAPI(title="Congiuntura Live", version="0.5.1", lifespan=lifespan)
+app = FastAPI(title="Congiuntura Live", version="0.5.2", lifespan=lifespan)
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # Serve vendored static assets (htmx.min.js etc.)
@@ -366,11 +366,14 @@ async def search(
     sentiment: list[str] = Query(default=[]),
     date_from: str = Query(default=""),
     date_to: str = Query(default=""),
+    q: str = Query(default=""),
 ):
     """htmx endpoint: filter processed releases, return card fragment.
 
     The response includes an out-of-band swap that updates the
     ``#retrieved-count`` element with the number of filtered results.
+    ``q`` is a text fragment matched (case-insensitive) in the English
+    title, English summary and key figures, combined with the other filters.
     """
     repo = _get_repo()
     filters: dict[str, Any] = {}
@@ -379,6 +382,8 @@ async def search(
             filters[key] = vals
     filters["date_from"] = _parse_date(date_from)
     filters["date_to"] = _parse_date(date_to)
+    if q.strip():
+        filters["q"] = q.strip()
 
     results = await repo.search_processed(filters=filters, limit=200)
     total_matching = await repo.count_processed(filters=filters)

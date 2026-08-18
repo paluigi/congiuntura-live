@@ -395,6 +395,13 @@ MIT © Luigi Palumbo
 
 ## Change Log
 
+- **0.5.2**: Free-text search on the home page — a search box in the filter bar
+  matches case-insensitive text fragments against the English title, English
+  summary and key figures of processed releases, combined with the existing
+  publisher/topic/country/sentiment/date filters. Calendar UI: right-aligned
+  ForexFactory values with full Actual/Forecast/Previous labels, responsive
+  wrapping on narrow screens, dropped the impact badge and the machine-readable
+  CSO links; raw-feed rows stack as cards on mobile.
 - **0.5.1**: Live "last update" indicators on all three pages (home, raw feeds,
   calendar) — `update_status` helper MongoDB collection tracks each pipeline's
   last run (feed poller ~5 min, calendar cron daily 07:00 UTC); `/ws` WebSocket

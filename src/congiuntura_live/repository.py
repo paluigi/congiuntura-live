@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import UTC, datetime
 from typing import Any
 
@@ -177,6 +178,8 @@ class PressReleaseRepository:
 
         ``topic``, ``country``, ``sentiment``, ``publisher`` values are
         lists — mapped to ``$in`` for multi-select OR semantics.
+        ``q`` is a free-text fragment matched case-insensitively against
+        the English title/summary and key figures.
         """
         if not filters:
             return {}
@@ -190,6 +193,15 @@ class PressReleaseRepository:
                     query[field] = value
             elif field in ("date_from", "date_to"):
                 continue  # handled below
+        # Free-text fragment (escaped so user input matches literally)
+        q = filters.get("q")
+        if q:
+            pattern = {"$regex": re.escape(q), "$options": "i"}
+            query["$or"] = [
+                {"title_en": pattern},
+                {"summary_en": pattern},
+                {"key_figures": pattern},
+            ]
         # Date range
         date_filter: dict[str, Any] = {}
         if filters.get("date_from"):

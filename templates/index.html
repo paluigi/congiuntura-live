@@ -60,6 +60,17 @@
                hx-swap="innerHTML">
     </label>
 
+    <label style="flex-basis: 100%;">
+        Search text
+        <input type="search" name="q"
+               placeholder="Partial match, case-insensitive, in English title, summary and key figures…"
+               hx-get="/search"
+               hx-trigger="keyup changed delay:400ms"
+               hx-target="#results"
+               hx-include="closest form"
+               hx-swap="innerHTML">
+    </label>
+
     <div style="display: flex; flex-direction: column; gap: 0.5rem; justify-content: flex-end;">
         <button type="button" class="reprocess-btn secondary outline btn-sm"
                 hx-post="/reprocess"
