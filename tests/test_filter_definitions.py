@@ -7,28 +7,33 @@ from typing import Literal
 from pydantic import BaseModel
 
 from congiuntura_live.app import _build_filter_definitions
+from congiuntura_live.processor import PUBLISHER_COUNTRY
 
 
 class _Model(BaseModel):
     topics: list[Literal["GDP", "Labour market"]]
-    country: Literal["Italy", "Euro area"]
+    sentiment: Literal["positive", "neutral"]
     title_en: str
     plain_list: list[str]
 
 
-def test_literal_fields_become_filters(monkeypatch):
+def test_literal_fields_and_injected_country_filter(monkeypatch):
     monkeypatch.setattr("congiuntura_live.app._extraction_model_class", _Model)
 
-    filters = {f["name"]: f for f in _build_filter_definitions()}
+    filters = _build_filter_definitions()
 
-    assert set(filters) == {"topics", "country"}
+    # Country (derived from the publisher) is injected after topics,
+    # even though it is no longer an LLM model field.
+    assert [f["name"] for f in filters] == ["topics", "country", "sentiment"]
+    assert filters[0]["choices"] == ["GDP", "Labour market"]
+    assert filters[1]["choices"] == list(PUBLISHER_COUNTRY.values())
+    assert filters[2]["choices"] == ["positive", "neutral"]
 
-    # list[Literal[...]] unwraps to the inner choices (multi-tag filter)
-    assert filters["topics"]["choices"] == ["GDP", "Labour market"]
-    # bare Literal keeps working (single-choice filter)
-    assert filters["country"]["choices"] == ["Italy", "Euro area"]
 
-
-def test_without_model_returns_empty(monkeypatch):
+def test_without_model_country_filter_still_present(monkeypatch):
     monkeypatch.setattr("congiuntura_live.app._extraction_model_class", None)
-    assert _build_filter_definitions() == []
+
+    filters = _build_filter_definitions()
+
+    assert [f["name"] for f in filters] == ["country"]
+    assert filters[0]["choices"] == list(PUBLISHER_COUNTRY.values())

@@ -219,7 +219,7 @@ wheels = [
 
 [[package]]
 name = "congiuntura-live"
-version = "0.6.1"
+version = "0.6.2"
 source = { editable = "." }
 dependencies = [
     { name = "apscheduler" },

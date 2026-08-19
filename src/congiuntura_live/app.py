@@ -17,7 +17,7 @@ from starlette.background import BackgroundTask
 from starlette.responses import Response
 
 from .feed_reader import FeedReader
-from .processor import ReleaseProcessor
+from .processor import PUBLISHER_COUNTRY, ReleaseProcessor
 from .repository import PressReleaseRepository
 from .scheduler import FeedPoller, ProcessingPoller
 from .settings import Settings, load_app_config, load_extraction_model, load_feeds_config
@@ -195,7 +195,7 @@ async def lifespan(app: FastAPI):
     logger.info("Application stopped")
 
 
-app = FastAPI(title="Congiuntura Live", version="0.6.1", lifespan=lifespan)
+app = FastAPI(title="Congiuntura Live", version="0.6.2", lifespan=lifespan)
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # Serve vendored static assets (htmx.min.js etc.)
@@ -284,6 +284,12 @@ def _literal_choices(annotation: Any) -> list[str] | None:
     return None
 
 
+def _country_filter() -> dict[str, Any]:
+    """Country is derived from the publisher (no longer an LLM field) —
+    its filter is injected manually so the dropdown stays in the UI."""
+    return {"name": "country", "type": "select", "choices": list(PUBLISHER_COUNTRY.values())}
+
+
 def _build_filter_definitions() -> list[dict[str, Any]]:
     """Introspect the LLMExtraction model to build UI filter definitions.
 
@@ -291,13 +297,18 @@ def _build_filter_definitions() -> list[dict[str, Any]]:
     (multi-select in the UI either way).  ``str`` fields (summary_en,
     key_figures) are excluded — they are display-only.
     """
-    if _extraction_model_class is None:
-        return []
     filters: list[dict[str, Any]] = []
-    for name, field_info in _extraction_model_class.model_fields.items():
-        choices = _literal_choices(field_info.annotation)
-        if choices:
-            filters.append({"name": name, "type": "select", "choices": choices})
+    country_injected = False
+    if _extraction_model_class is not None:
+        for name, field_info in _extraction_model_class.model_fields.items():
+            choices = _literal_choices(field_info.annotation)
+            if choices:
+                filters.append({"name": name, "type": "select", "choices": choices})
+                if name == "topics":
+                    filters.append(_country_filter())
+                    country_injected = True
+    if not country_injected:
+        filters.append(_country_filter())
     return filters
 
 

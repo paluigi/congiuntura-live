@@ -395,6 +395,12 @@ MIT © Luigi Palumbo
 
 ## Change Log
 
+- **0.6.2**: Country is now fully deterministic — derived from the issuing NSO
+  (Istat→Italy, INE→Spain, INSEE→France, Destatis→Germany, CSO→Ireland,
+  Eurostat→Euro area) instead of LLM-extracted; the "Other" option is gone and
+  the country field was removed from the LLM output schema (fewer tokens, no
+  misassignments possible). The home-page country filter is generated from the
+  mapping.
 - **0.6.1**: New LLM cascade — Meta `muse-spark-1.2-contributor` leads, previous
   groq/llm7 fallbacks retained behind it. Pressing Enter in the home/raw search
   forms now runs the htmx search instead of reloading the page and clearing

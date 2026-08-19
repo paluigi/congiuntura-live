@@ -22,10 +22,21 @@ logger = logging.getLogger(__name__)
 _SYSTEM_PROMPT = (
     "You are an expert economic analyst specializing in euro-area macroeconomic statistics. "
     "Extract structured information from the following official statistics press release. "
-    "Select all applicable topics (topics are tags, not mutually exclusive), identify the "
-    "geographic scope, assess the economic sentiment, write a concise English summary, "
-    "and extract key numerical figures."
+    "Select all applicable topics (topics are tags, not mutually exclusive), assess the "
+    "economic sentiment, write a concise English summary, and extract key numerical figures."
 )
+
+# Country is derived deterministically from the issuing NSO — the LLM never
+# sees the publisher, so its country guesses are unreliable (e.g. a Destatis
+# release discussing euro-area context would be tagged "Euro area").
+PUBLISHER_COUNTRY: dict[str, str] = {
+    "eurostat": "Euro area",
+    "istat": "Italy",
+    "ine": "Spain",
+    "insee": "France",
+    "destatis": "Germany",
+    "cso": "Ireland",
+}
 
 
 class ReleaseProcessor:
@@ -86,23 +97,25 @@ class ReleaseProcessor:
         extraction = result.value
 
         # 3. Assemble ProcessedRelease: LLM fields + auto fields from raw.
+        publisher = raw_doc.get("publisher", "")
         processed: dict[str, Any] = {
             # Auto fields (copied verbatim — never seen by the LLM)
             "url_hash": raw_doc["url_hash"],
             "url": url,
             "title": title,
-            "publisher": raw_doc.get("publisher", ""),
+            "publisher": publisher,
             "publisher_full": raw_doc.get("publisher_full", ""),
             "feed_label": raw_doc.get("feed_label", ""),
             "language": raw_doc.get("language", ""),
             "published": raw_doc.get("published"),
             "fetched_at": raw_doc.get("fetched_at"),
             "processed_at": datetime.now(UTC),
+            # Derived deterministically from the issuing NSO
+            "country": PUBLISHER_COUNTRY.get(publisher, ""),
             # LLM metadata
             "processing_model": f"{result.provider}/{result.model}",
             # LLM-generated fields
             "topics": list(dict.fromkeys(extraction.topics)),
-            "country": extraction.country,
             "sentiment": extraction.sentiment,
             "title_en": extraction.title_en,
             "summary_en": extraction.summary_en,
@@ -112,7 +125,7 @@ class ReleaseProcessor:
             "Processed %s → topics=%s, country=%s",
             url[:60],
             extraction.topics,
-            extraction.country,
+            country,
         )
         return processed
 

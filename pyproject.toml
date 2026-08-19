@@ -1,6 +1,6 @@
 [project]
 name = "congiuntura-live"
-version = "0.6.1"
+version = "0.6.2"
 description = "Aggregator of RSS feeds from European official statistics agencies"
 readme = "README.md"
 license = { text = "MIT" }

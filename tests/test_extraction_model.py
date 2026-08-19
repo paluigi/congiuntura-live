@@ -23,7 +23,12 @@ class TestModelLoading:
 
     def test_model_has_expected_fields(self, model_class):
         fields = set(model_class.model_fields.keys())
-        assert fields == {"topics", "country", "sentiment", "title_en", "summary_en", "key_figures"}
+        assert fields == {"topics", "sentiment", "title_en", "summary_en", "key_figures"}
+
+    def test_country_is_not_an_llm_field(self, model_class):
+        """Country is derived deterministically from the publisher — the
+        LLM must not generate it."""
+        assert "country" not in model_class.model_fields
 
     def test_no_auto_fields_in_model(self, model_class):
         """The LLM must NOT see url/date/publisher fields."""
@@ -59,17 +64,8 @@ class TestModelLoading:
 
         assert topics_schema["type"] == "array"
         assert set(topics_schema["items"]["enum"]) == set(self._topic_choices(model_class))
-        assert schema["required"] == ["topics", "country", "sentiment", "title_en", "summary_en", "key_figures"]
+        assert schema["required"] == ["topics", "sentiment", "title_en", "summary_en", "key_figures"]
         assert topics_schema.get("minItems", 1) >= 1
-
-    def test_country_choices(self, model_class):
-        import typing
-
-        country_ann = model_class.model_fields["country"].annotation
-        choices = typing.get_args(country_ann)
-        assert "Italy" in choices
-        assert "Euro area" in choices
-        assert "Germany" in choices
 
     def test_sentiment_choices(self, model_class):
         import typing
@@ -81,7 +77,6 @@ class TestModelLoading:
     def test_can_instantiate_with_valid_data(self, model_class):
         instance = model_class(
             topics=["GDP", "International trade"],
-            country="Italy",
             sentiment="neutral",
             title_en="GDP grew by 0.3% in Q1 2025",
             summary_en="GDP rose by 0.3% in Q1 2025.",
@@ -96,7 +91,6 @@ class TestModelLoading:
         with pytest.raises(ValidationError):
             model_class(
                 topics=["Invalid topic"],
-                country="Italy",
                 sentiment="neutral",
                 summary_en="test",
                 key_figures="test",
@@ -108,7 +102,6 @@ class TestModelLoading:
         with pytest.raises(ValidationError):
             model_class(
                 topics=[],
-                country="Italy",
                 sentiment="neutral",
                 summary_en="test",
                 key_figures="test",
