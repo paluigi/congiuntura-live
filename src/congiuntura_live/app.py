@@ -195,7 +195,7 @@ async def lifespan(app: FastAPI):
     logger.info("Application stopped")
 
 
-app = FastAPI(title="Congiuntura Live", version="0.6.2", lifespan=lifespan)
+app = FastAPI(title="Congiuntura Live", version="0.6.3", lifespan=lifespan)
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # Serve vendored static assets (htmx.min.js etc.)
@@ -301,6 +301,10 @@ def _build_filter_definitions() -> list[dict[str, Any]]:
     country_injected = False
     if _extraction_model_class is not None:
         for name, field_info in _extraction_model_class.model_fields.items():
+            if name == "country":
+                # Country is always derived from the publisher — ignore any
+                # stale copy of the extraction model that still defines it.
+                continue
             choices = _literal_choices(field_info.annotation)
             if choices:
                 filters.append({"name": name, "type": "select", "choices": choices})

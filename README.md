@@ -395,6 +395,9 @@ MIT © Luigi Palumbo
 
 ## Change Log
 
+- **0.6.3**: Fixed duplicate Country filter when a stale extraction-model
+  config (still defining the country field) is mounted over the image —
+  model-derived country fields are now always ignored in filter generation.
 - **0.6.2**: Country is now fully deterministic — derived from the issuing NSO
   (Istat→Italy, INE→Spain, INSEE→France, Destatis→Germany, CSO→Ireland,
   Eurostat→Euro area) instead of LLM-extracted; the "Other" option is gone and
