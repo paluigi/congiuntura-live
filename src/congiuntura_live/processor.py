@@ -95,9 +95,23 @@ class ReleaseProcessor:
             return None
 
         extraction = result.value
+        if not isinstance(extraction, self._extraction_model):
+            # outlines-cascade returns the raw response text when it fails to
+            # validate against the output schema — surface it instead of crashing.
+            raw = extraction if isinstance(extraction, str) else repr(extraction)
+            logger.warning(
+                "LLM response for %s did not validate against the extraction "
+                "model (provider %s/%s) — treating as failure. Raw output: %.200s",
+                url[:60],
+                result.provider,
+                result.model,
+                raw,
+            )
+            return None
 
         # 3. Assemble ProcessedRelease: LLM fields + auto fields from raw.
         publisher = raw_doc.get("publisher", "")
+        country = PUBLISHER_COUNTRY.get(publisher, "")
         processed: dict[str, Any] = {
             # Auto fields (copied verbatim — never seen by the LLM)
             "url_hash": raw_doc["url_hash"],
@@ -111,7 +125,7 @@ class ReleaseProcessor:
             "fetched_at": raw_doc.get("fetched_at"),
             "processed_at": datetime.now(UTC),
             # Derived deterministically from the issuing NSO
-            "country": PUBLISHER_COUNTRY.get(publisher, ""),
+            "country": country,
             # LLM metadata
             "processing_model": f"{result.provider}/{result.model}",
             # LLM-generated fields

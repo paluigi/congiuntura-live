@@ -219,7 +219,7 @@ wheels = [
 
 [[package]]
 name = "congiuntura-live"
-version = "0.6.3"
+version = "0.6.4"
 source = { editable = "." }
 dependencies = [
     { name = "apscheduler" },
@@ -619,7 +619,7 @@ wheels = [
 
 [[package]]
 name = "llm-pycascade"
-version = "0.1.0"
+version = "0.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiosqlite" },
@@ -627,9 +627,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "tomli-w" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/38/e3/3f672e9fc5a29121542c05bf22f98ec088ba658a383d7e65cf324bad6744/llm_pycascade-0.1.0.tar.gz", hash = "sha256:743093412538ff0a0f8b7f37ef41ac260fcaafeb05a4c2d3970fbee581570cac", size = 81658, upload-time = "2026-07-14T20:54:53.54Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/97/f5/073f6605c9b10f8826ba13d50cf1ee4e4941a0a31eaac982019830ab07a3/llm_pycascade-0.2.0.tar.gz", hash = "sha256:33c13c1a244405574f2326d42f36ee7c01815228146d3351ba5b5b300c806d76", size = 86617, upload-time = "2026-08-17T08:26:58.768Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f9/ad/ce94e31b049ca4d883590aa91c6502a6645fd38c0c3c481721a973f80ad1/llm_pycascade-0.1.0-py3-none-any.whl", hash = "sha256:c2beaa247da172b43bbdd49987f60146eb95214398d3819fe3925e6d36f6859f", size = 28755, upload-time = "2026-07-14T20:54:52.176Z" },
+    { url = "https://files.pythonhosted.org/packages/75/cd/5c878e5f0be8ad4c49890a97dc53eedb815b27003a83e5aeff3312e404a2/llm_pycascade-0.2.0-py3-none-any.whl", hash = "sha256:d44ddfeb45beeb4df9b54847d0793d1290219f0a2cf2e7663fdbb79187019f54", size = 29965, upload-time = "2026-08-17T08:26:57.524Z" },
 ]
 
 [[package]]
@@ -843,16 +843,16 @@ wheels = [
 
 [[package]]
 name = "outlines-cascade"
-version = "0.1.0"
+version = "0.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "llm-pycascade" },
     { name = "outlines" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8e/19/2698c66a43414ab2f8ccf192afc427390222d38cfb743ab8a446e4c0c06b/outlines_cascade-0.1.0.tar.gz", hash = "sha256:10901db6a7c1bac67c88e7a3db60e52b196188311de601977d8e0e641eb30cce", size = 194366, upload-time = "2026-07-19T20:26:46.027Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e5/9b/a159bc28d3c778e7502f45a290f401807d08f260bc62e886a5ea8835767f/outlines_cascade-0.1.1.tar.gz", hash = "sha256:7091d2a51ac3373999626b3ae96c406dbe7bb39cfcca2a57be9b4c36fc04f358", size = 195338, upload-time = "2026-07-21T22:15:42.484Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/da/0b/8d992c79b3b5d84beaf6aca16be422f15d802c793ff5ace72f7d9ae57ef0/outlines_cascade-0.1.0-py3-none-any.whl", hash = "sha256:82dd84668b7f2a94f44d3d3ce6c03f9745bfeb4ff40e54b1710ec2fcf3276831", size = 23275, upload-time = "2026-07-19T20:26:44.325Z" },
+    { url = "https://files.pythonhosted.org/packages/17/90/12855770715bf61aea8a51292c70eef9a5755bee8cc7c27f62c73a25b570/outlines_cascade-0.1.1-py3-none-any.whl", hash = "sha256:5b17d12240cca85156e92b9cc85fd24b3f05b6712f198476d0683ae6c4a89775", size = 23275, upload-time = "2026-07-21T22:15:41.253Z" },
 ]
 
 [[package]]

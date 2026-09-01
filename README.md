@@ -395,6 +395,15 @@ MIT © Luigi Palumbo
 
 ## Change Log
 
+- **0.6.4**: Fixed processing crash on every successful extraction (NameError on
+  the country log line) and on schema-validation failures — outlines-cascade
+  returns the raw response text when the LLM output fails validation, which is
+  now detected, logged with a diagnostic excerpt, and treated as a per-item
+  failure (retried on a later cycle). Upgraded outlines-cascade to 0.1.1 and
+  llm-pycascade to 0.2.0 (provider keys still resolved via `api_key_env`;
+  the new literal-key setting is not used). Added unit tests for
+  `process_one` (happy path, unknown publisher, invalid output, cascade
+  error).
 - **0.6.3**: Fixed duplicate Country filter when a stale extraction-model
   config (still defining the country field) is mounted over the image —
   model-derived country fields are now always ignored in filter generation.
