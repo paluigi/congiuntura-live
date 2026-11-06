@@ -66,33 +66,54 @@ class ICSCollector(BaseNSOCollector):
     def source_code(self) -> str:
         return self._code
 
+    def _keep(self, event: icalendar.Event) -> bool:
+        """Hook for subclasses: whether to keep a parsed VEVENT."""
+        return True
+
+    def _parse_events(self, text: str) -> list[dict]:
+        """Parse one iCalendar payload into release records (no dedup)."""
+        records: list[dict] = []
+        for event in icalendar.Calendar.from_ical(text).walk("VEVENT"):
+            dtstart = event.get("DTSTART")
+            if dtstart is None:
+                continue
+            dt = dtstart.dt
+            if isinstance(dt, datetime):
+                dt_utc = dt.astimezone(UTC) if dt.tzinfo else dt.replace(tzinfo=self._tz).astimezone(UTC)
+            else:
+                dt_utc = datetime.combine(dt, time(self._hour, 0), tzinfo=self._tz).astimezone(UTC)
+
+            summary = str(event.get("SUMMARY", "")).strip()
+            if not summary:
+                continue
+            if not self._keep(event):
+                continue
+            ref_period = self._extract_ref_period(str(event.get("DESCRIPTION", "")))
+            url_field = event.get("URL")
+            records.append(self._record(
+                summary, dt_utc, ref_period,
+                str(url_field) if url_field else None,
+            ))
+        return records
+
     async def collect(self) -> list[dict]:
         records: list[dict] = []
+        seen_uids: set[str] = set()
         async with httpx.AsyncClient(timeout=30, headers=HEADERS, follow_redirects=True) as client:
             for url in self._urls:
                 try:
                     resp = await client.get(url)
                     resp.raise_for_status()
-                    cal = icalendar.Calendar.from_ical(resp.text)
-                    for event in cal.walk("VEVENT"):
-                        dtstart = event.get("DTSTART")
-                        if dtstart is None:
+                    parsed = self._parse_events(resp.text)
+                    if not parsed:
+                        logger.warning(
+                            "ICSCollector [%s] URL %s returned 0 events", self._code, url
+                        )
+                    for record in parsed:
+                        if record["source_uid"] in seen_uids:  # same event via multiple URLs
                             continue
-                        dt = dtstart.dt
-                        if isinstance(dt, datetime):
-                            dt_utc = dt.astimezone(UTC) if dt.tzinfo else dt.replace(tzinfo=self._tz).astimezone(UTC)
-                        else:
-                            dt_utc = datetime.combine(dt, time(self._hour, 0), tzinfo=self._tz).astimezone(UTC)
-
-                        summary = str(event.get("SUMMARY", "")).strip()
-                        if not summary:
-                            continue
-                        ref_period = self._extract_ref_period(str(event.get("DESCRIPTION", "")))
-                        url_field = event.get("URL")
-                        records.append(self._record(
-                            summary, dt_utc, ref_period,
-                            str(url_field) if url_field else None,
-                        ))
+                        seen_uids.add(record["source_uid"])
+                        records.append(record)
                 except Exception:
                     logger.exception("ICSCollector [%s] URL %s failed", self._code, url)
         return records
@@ -125,12 +146,27 @@ class INECollector(ICSCollector):
 
 
 class EurostatCollector(ICSCollector):
+    """Eurostat release calendar via the eventsIcal export of the online
+    release calendar (category 1 = data release, 2 = euro indicators release;
+    theme 0 = all themes)."""
+
+    _KEEP_CATEGORIES = ("data release", "euro indicators")
+
     def __init__(self):
         super().__init__(
             code="eurostat",
-            feed_urls=["https://ec.europa.eu/eurostat/subscribe/calendar.ics"],
+            feed_urls=[
+                "https://ec.europa.eu/eurostat/o/calendars/eventsIcal?theme=0&category=1",
+                "https://ec.europa.eu/eurostat/o/calendars/eventsIcal?theme=0&category=2",
+            ],
             default_tz="Europe/Brussels", default_hour=11,
         )
+
+    def _keep(self, event: icalendar.Event) -> bool:
+        # Belt-and-braces alongside the server-side category filter: skip
+        # anything without a release category (publications, podcasts, ...).
+        categories = str(event.get("X-CATEGORY", "")).lower()
+        return any(c in categories for c in self._KEEP_CATEGORIES)
 
 
 class DestatisCollector(BaseNSOCollector):

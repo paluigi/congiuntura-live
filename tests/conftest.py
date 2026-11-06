@@ -95,3 +95,72 @@ def rss_sample_destatis() -> str:
     </item>
 </channel>
 </rss>"""
+
+
+@pytest.fixture
+def ics_sample_eurostat() -> str:
+    """A representative eventsIcal export of the Eurostat release calendar.
+
+    Mirrors the real feed (https://ec.europa.eu/eurostat/o/calendars/eventsIcal):
+    all-day VEVENTs with X-THEME/X-CATEGORY and ICS-escaped commas, no
+    DESCRIPTION/URL properties.
+    """
+    return "\r\n".join([
+        "BEGIN:VCALENDAR",
+        "PRODID:-//Eurostat//Release calendar//EN",
+        "X-WR-CALNAME:Eurostat release calendar",
+        "VERSION:2.0",
+        "CALSCALE:GREGORIAN",
+        "BEGIN:VTIMEZONE",
+        "TZID:Europe/Luxembourg",
+        "END:VTIMEZONE",
+        "BEGIN:VEVENT",
+        "DTSTAMP:20261106T183919Z",
+        "DTSTART;VALUE=DATE:20260814",
+        "SUMMARY:Retail trade",
+        "CATEGORIES:Purple Category",
+        "TRANSP:TRANSPARENT",
+        "X-THEME:economy",
+        "X-CATEGORY:Data release\\,Euro indicators release",
+        "UID:20270418T020424Z-1@paloontrar.cc.cec.eu.int",
+        "END:VEVENT",
+        "BEGIN:VEVENT",
+        "DTSTAMP:20261106T183919Z",
+        "DTSTART;VALUE=DATE:20270106",
+        "SUMMARY:House price index\\, Q2/2026",
+        "CATEGORIES:Purple Category",
+        "TRANSP:TRANSPARENT",
+        "X-THEME:economy",
+        "X-CATEGORY:Data release",
+        "UID:20270418T020425Z-1@paloontrar.cc.cec.eu.int",
+        "END:VEVENT",
+        "BEGIN:VEVENT",
+        "DTSTAMP:20261106T183919Z",
+        "DTSTART;VALUE=DATE:20260820",
+        "SUMMARY:Housing statistics in Europe",
+        "CATEGORIES:Purple Category",
+        "TRANSP:TRANSPARENT",
+        "X-THEME:population",
+        "X-CATEGORY:Publication\\,Statistics Explained",
+        "UID:20270418T020426Z-1@paloontrar.cc.cec.eu.int",
+        "END:VEVENT",
+        "BEGIN:VEVENT",
+        "DTSTAMP:20261106T183919Z",
+        "DTSTART;VALUE=DATE:20260821",
+        "CATEGORIES:Purple Category",
+        "TRANSP:TRANSPARENT",
+        "X-THEME:economy",
+        "X-CATEGORY:Data release",
+        "UID:20270418T020427Z-1@paloontrar.cc.cec.eu.int",
+        "END:VEVENT",
+        "BEGIN:VEVENT",
+        "DTSTAMP:20261106T183919Z",
+        "SUMMARY:No date here",
+        "CATEGORIES:Purple Category",
+        "TRANSP:TRANSPARENT",
+        "X-THEME:economy",
+        "X-CATEGORY:Data release",
+        "UID:20270418T020428Z-1@paloontrar.cc.cec.eu.int",
+        "END:VEVENT",
+        "END:VCALENDAR",
+    ])
