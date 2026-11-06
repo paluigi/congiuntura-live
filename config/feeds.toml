@@ -93,6 +93,10 @@ language = "de"
 label = "Press releases"
 url = "https://www.destatis.de/Aktuelles.xml"
 
+[[destatis.feeds]]
+label = "English releases"
+url = "https://rss.vps2.gg8.eu/rss/press-release-destatis"
+
 
 # ══════════════════════════════════════════════════════════════════
 # CSO — Central Statistics Office, Ireland (EN, RSS 2.0)
