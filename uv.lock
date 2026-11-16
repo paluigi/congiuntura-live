@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.12"
 
 [[package]]
@@ -219,7 +219,7 @@ wheels = [
 
 [[package]]
 name = "congiuntura-live"
-version = "0.6.4"
+version = "0.7.0"
 source = { editable = "." }
 dependencies = [
     { name = "apscheduler" },

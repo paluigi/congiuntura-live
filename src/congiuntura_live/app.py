@@ -17,7 +17,7 @@ from starlette.background import BackgroundTask
 from starlette.responses import Response
 
 from .feed_reader import FeedReader
-from .processor import PUBLISHER_COUNTRY, ReleaseProcessor
+from .processor import ReleaseProcessor
 from .repository import PressReleaseRepository
 from .scheduler import FeedPoller, ProcessingPoller
 from .settings import Settings, load_app_config, load_extraction_model, load_feeds_config
@@ -195,7 +195,7 @@ async def lifespan(app: FastAPI):
     logger.info("Application stopped")
 
 
-app = FastAPI(title="Congiuntura Live", version="0.6.5", lifespan=lifespan)
+app = FastAPI(title="Congiuntura Live", version="0.7.0", lifespan=lifespan)
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # Serve vendored static assets (htmx.min.js etc.)
@@ -284,13 +284,13 @@ def _literal_choices(annotation: Any) -> list[str] | None:
     return None
 
 
-def _country_filter() -> dict[str, Any]:
+def _country_filter(country_choices: list[str]) -> dict[str, Any]:
     """Country is derived from the publisher (no longer an LLM field) —
     its filter is injected manually so the dropdown stays in the UI."""
-    return {"name": "country", "type": "select", "choices": list(PUBLISHER_COUNTRY.values())}
+    return {"name": "country", "type": "select", "choices": country_choices}
 
 
-def _build_filter_definitions() -> list[dict[str, Any]]:
+def _build_filter_definitions(country_choices: list[str]) -> list[dict[str, Any]]:
     """Introspect the LLMExtraction model to build UI filter definitions.
 
     Literal and list[Literal[...]] types become dropdown filters
@@ -309,10 +309,10 @@ def _build_filter_definitions() -> list[dict[str, Any]]:
             if choices:
                 filters.append({"name": name, "type": "select", "choices": choices})
                 if name == "topics":
-                    filters.append(_country_filter())
+                    filters.append(_country_filter(country_choices))
                     country_injected = True
     if not country_injected:
-        filters.append(_country_filter())
+        filters.append(_country_filter(country_choices))
     return filters
 
 
@@ -324,10 +324,13 @@ async def index(request: Request):
     """Render the main page with processed releases and auto-generated filters."""
     feeds_cfg = load_feeds_config()
     publishers = [(slug, cfg.name) for slug, cfg in feeds_cfg.items()]
+    # Unique geo areas in TOML order — several agencies may share one area
+    # (e.g. Eurostat and DG EcoFin both → "Euro area").
+    country_choices = list(dict.fromkeys(cfg.country for cfg in feeds_cfg.values()))
     repo = _get_repo()
     processed_count = await repo.count_total_processed()
     raw_count = await repo.count_total_raw()
-    filters = _build_filter_definitions()
+    filters = _build_filter_definitions(country_choices)
     ctx = await _update_status_context()
     return templates.TemplateResponse(
         request,

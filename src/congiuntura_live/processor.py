@@ -15,7 +15,7 @@ from outlines_cascade import generate, load_config
 from outlines_cascade.config import AppConfig as CascadeAppConfig
 
 from .scraper import PressReleaseScraper
-from .settings import ProcessingConfig, load_extraction_model
+from .settings import ProcessingConfig, load_extraction_model, load_feeds_config
 
 logger = logging.getLogger(__name__)
 
@@ -25,18 +25,6 @@ _SYSTEM_PROMPT = (
     "Select all applicable topics (topics are tags, not mutually exclusive), assess the "
     "economic sentiment, write a concise English summary, and extract key numerical figures."
 )
-
-# Country is derived deterministically from the issuing NSO — the LLM never
-# sees the publisher, so its country guesses are unreliable (e.g. a Destatis
-# release discussing euro-area context would be tagged "Euro area").
-PUBLISHER_COUNTRY: dict[str, str] = {
-    "eurostat": "Euro area",
-    "istat": "Italy",
-    "ine": "Spain",
-    "insee": "France",
-    "destatis": "Germany",
-    "cso": "Ireland",
-}
 
 
 class ReleaseProcessor:
@@ -50,11 +38,24 @@ class ReleaseProcessor:
     def __init__(
         self,
         processing_cfg: ProcessingConfig,
+        feeds_config_path: str = "config/feeds.toml",
     ) -> None:
         self._cfg = processing_cfg
         self._scraper = PressReleaseScraper(max_chars=processing_cfg.max_content_chars)
         self._cascade_config: CascadeAppConfig | None = None
         self._extraction_model = load_extraction_model(processing_cfg.model_path)
+        # Country is derived deterministically from the issuing NSO, as
+        # configured per agency in feeds.toml — the LLM never sees the
+        # publisher, so its country guesses are unreliable (e.g. a Destatis
+        # release discussing euro-area context would be tagged "Euro area").
+        agencies = load_feeds_config(feeds_config_path)
+        self._publisher_countries: dict[str, str] = {
+            slug: cfg.country for slug, cfg in agencies.items()
+        }
+
+    def country_for(self, publisher: str) -> str:
+        """Geo area attributed to a publisher's releases ("" if unknown)."""
+        return self._publisher_countries.get(publisher, "")
 
     def _ensure_config(self) -> CascadeAppConfig:
         """Lazy-load the outlines-cascade config (reads env vars at call time)."""
@@ -111,7 +112,7 @@ class ReleaseProcessor:
 
         # 3. Assemble ProcessedRelease: LLM fields + auto fields from raw.
         publisher = raw_doc.get("publisher", "")
-        country = PUBLISHER_COUNTRY.get(publisher, "")
+        country = self.country_for(publisher)
         processed: dict[str, Any] = {
             # Auto fields (copied verbatim — never seen by the LLM)
             "url_hash": raw_doc["url_hash"],

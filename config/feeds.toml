@@ -3,6 +3,9 @@
 # You can edit it freely — the application reloads it on each poll cycle.
 #
 # Each section is an agency (publisher). The key becomes the `publisher` slug.
+# `country` is the geo area attributed to every release of the agency
+# (stored in the `country` field, used by the country filter) — required,
+# so a new source cannot be added without declaring its area.
 # Add as many [[<agency>.feeds]] entries as needed.
 # ───────────────────────────────────────────────────────────────────
 
@@ -12,6 +15,7 @@
 [eurostat]
 name = "Eurostat"
 language = "en"
+country = "Euro area"
 
 [[eurostat.feeds]]
 label = "News releases"
@@ -25,6 +29,7 @@ url = "https://ec.europa.eu/eurostat/en/search?p_p_id=estatsearchportlet_WAR_est
 [istat]
 name = "Istat"
 language = "it"
+country = "Italy"
 
 [[istat.feeds]]
 label = "National accounts"
@@ -57,6 +62,7 @@ url = "https://www.istat.it/tema/lavoro-e-retribuzioni/feed"
 [ine]
 name = "INE"
 language = "es"
+country = "Spain"
 
 [[ine.feeds]]
 label = "Press releases"
@@ -72,6 +78,7 @@ url = "https://ine.es/dyngs/Prensa/es/rssNovedades.xml"
 [insee]
 name = "INSEE"
 language = "en"
+country = "France"
 
 [[insee.feeds]]
 label = "Economic outlook"
@@ -88,6 +95,7 @@ url = "https://www.insee.fr/en/flux/31"
 [destatis]
 name = "Destatis"
 language = "de"
+country = "Germany"
 
 [[destatis.feeds]]
 label = "Press releases"
@@ -97,14 +105,30 @@ url = "https://www.destatis.de/Aktuelles.xml"
 label = "English releases"
 url = "https://rss.vps2.gg8.eu/rss/press-release-destatis"
 
-
 # ══════════════════════════════════════════════════════════════════
 # CSO — Central Statistics Office, Ireland (EN, RSS 2.0)
 # ══════════════════════════════════════════════════════════════════
 [cso]
 name = "CSO"
 language = "en"
+country = "Ireland"
 
 [[cso.feeds]]
 label = "Latest releases"
 url = "https://rss.vps2.gg8.eu/rss/cso-latest-releases"
+
+# ══════════════════════════════════════════════════════════════════
+# European Commission -= DG EcoFin
+# ══════════════════════════════════════════════════════════════════
+[dgecofin]
+name = "DG EcoFin"
+language = "en"
+country = "Euro area"
+
+[[dgecofin.feeds]]
+label = "Latest releases"
+url = "https://rss.vps2.gg8.eu/rss/ec-bcs-press-releases"
+
+[[dgecofin.feeds]]
+label = "Flash Consumer releases"
+url = "https://rss.vps2.gg8.eu/rss/ec-flash-consumer"

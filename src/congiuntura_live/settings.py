@@ -76,6 +76,7 @@ class FeedConfig(BaseModel):
 class AgencyConfig(BaseModel):
     name: str
     language: str
+    country: str  # geo area attributed to the agency's releases (required)
     feeds: list[FeedConfig]
 
 

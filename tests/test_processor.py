@@ -8,7 +8,7 @@ import pytest
 
 import congiuntura_live.processor as processor_module
 from congiuntura_live.processor import ReleaseProcessor
-from congiuntura_live.settings import load_extraction_model
+from congiuntura_live.settings import load_extraction_model, load_feeds_config
 
 RAW_DOC = {
     "url_hash": "h1",
@@ -47,6 +47,9 @@ def _make_processor() -> ReleaseProcessor:
     proc._extraction_model = load_extraction_model("config/extraction_model.py")
     proc._cascade_config = object()  # truthy — skips lazy config loading
     proc._cfg = SimpleNamespace(cascade_name="test-cascade")
+    proc._publisher_countries = {
+        slug: cfg.country for slug, cfg in load_feeds_config("config/feeds.toml").items()
+    }
     return proc
 
 

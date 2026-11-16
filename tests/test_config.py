@@ -24,14 +24,23 @@ class TestAppConfig:
 class TestFeedsConfig:
     def test_load_all_agencies(self):
         feeds = load_feeds_config("config/feeds.toml")
-        assert len(feeds) == 6
-        assert set(feeds.keys()) == {"eurostat", "istat", "ine", "insee", "destatis", "cso"}
+        assert len(feeds) == 7
+        assert set(feeds.keys()) == {
+            "eurostat",
+            "istat",
+            "ine",
+            "insee",
+            "destatis",
+            "cso",
+            "dgecofin",
+        }
 
     def test_agency_fields(self):
         feeds = load_feeds_config("config/feeds.toml")
         istat = feeds["istat"]
         assert istat.name == "Istat"
         assert istat.language == "it"
+        assert istat.country == "Italy"
         assert len(istat.feeds) >= 4
 
     def test_feed_urls_are_valid(self):
@@ -57,5 +66,16 @@ class TestFeedsConfig:
         cso = feeds["cso"]
         assert cso.name == "CSO"
         assert cso.language == "en"
+        assert cso.country == "Ireland"
         assert len(cso.feeds) >= 1
         assert feeds["cso"].feeds[0].url.startswith("https://")
+
+    def test_dgecofin_config(self):
+        feeds = load_feeds_config("config/feeds.toml")
+        dgecofin = feeds["dgecofin"]
+        assert dgecofin.name == "DG EcoFin"
+        assert dgecofin.language == "en"
+        assert dgecofin.country == "Euro area"
+        assert len(dgecofin.feeds) >= 1
+        for feed in dgecofin.feeds:
+            assert feed.url.startswith("https://")

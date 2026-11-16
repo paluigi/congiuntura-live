@@ -3,7 +3,8 @@
 **Aggregator and LLM processor of RSS feeds from European official statistics agencies.**
 
 Monitors press releases from **Eurostat**, **Istat**, **INE** (Spain), **INSEE** (France),
-**Destatis** (Germany), and **CSO** (Ireland), deduplicates them, stores them in MongoDB, processes them
+**Destatis** (Germany), **CSO** (Ireland), and **DG EcoFin** (European Commission), deduplicates them,
+stores them in MongoDB, processes them
 with structured LLM extraction via [outlines-cascade](https://pypi.org/project/outlines-cascade/),
 and serves a searchable web interface with live updates via HTMX.
 
@@ -13,7 +14,7 @@ and serves a searchable web interface with live updates via HTMX.
 
 ### Phase 1 — Feed aggregation (complete)
 
-- **6 statistical agencies** monitored (12 feeds, ~300+ releases)
+- **7 statistical agencies** monitored (15 feeds, ~300+ releases)
 - **Automatic deduplication** via SHA-256 URL hashing
 - **Configurable polling** — default 5 minutes
 - **Flexible feed configuration** — edit `config/feeds.toml` without touching code
@@ -21,7 +22,8 @@ and serves a searchable web interface with live updates via HTMX.
 
 ### Phase 2 — LLM processing (complete)
 
-- **Structured extraction** via outlines-cascade (topic, country, sentiment, EN summary, key figures)
+- **Structured extraction** via outlines-cascade (topics, sentiment, EN title/summary, key
+  figures; geo area attributed deterministically from the agency's `country` in `feeds.toml`)
 - **Anti-hallucination design** — the LLM never sees URLs, dates, or publishers; those are
   copied verbatim from the raw feed after generation
 - **Content scraping** — trafilatura extracts the full press release text for richer LLM input
@@ -92,7 +94,7 @@ service, so you only need to set the LLM keys to enable processing. See
 ### 3. Run with Docker Compose
 
 Docker Compose pulls the prebuilt multi-arch image
-(`paluigi/congiuntura-live:0.4.0`, `linux/amd64` + `linux/arm64`) from Docker Hub —
+(`paluigi/congiuntura-live:0.7.0`, `linux/amd64` + `linux/arm64`) from Docker Hub —
 no local build required:
 
 ```bash
@@ -154,12 +156,16 @@ model_path = "config/extraction_model.py"
 
 ### `config/feeds.toml`
 
-Add feeds per agency — the file is re-read on every poll cycle:
+Add feeds per agency — the file is re-read on every poll cycle. The `country`
+key (required) is the geo area attributed to every release of the agency and
+drives the country filter; several agencies may share one area (Eurostat and
+DG EcoFin both → "Euro area"):
 
 ```toml
 [istat]
 name = "Istat"
 language = "it"
+country = "Italy"
 
 [[istat.feeds]]
 label = "National accounts"
@@ -168,13 +174,15 @@ url = "https://www.istat.it/tema/conti-nazionali/feed"
 
 ### `config/extraction_model.py`
 
-Define what the LLM extracts. The web UI auto-generates filters from this model:
+Define what the LLM extracts. The web UI auto-generates filters from this model.
+Country is **not** an LLM field — it is attributed deterministically from the
+agency's `country` in `feeds.toml`:
 
 ```python
 class LLMExtraction(BaseModel):
-    topic: Literal["Consumer prices", "Producer prices", ...] = Field(...)
-    country: Literal["Euro area", "Italy", ...] = Field(...)
+    topics: list[Literal["Consumer prices", "Producer prices", ...]] = Field(...)
     sentiment: Literal["positive", "negative", "neutral"] = Field(...)
+    title_en: str = Field(description="English translation of the title")
     summary_en: str = Field(description="Concise English summary")
     key_figures: str = Field(description="Key numerical figures")
 ```
@@ -395,6 +403,19 @@ MIT © Luigi Palumbo
 
 ## Change Log
 
+- **0.7.0**: Added **DG EcoFin** (European Commission — BCS press releases and
+  Flash consumer surveys) as 7th monitored source, attributed to the
+  **Euro area**. Geo-area attribution moved from the hardcoded
+  `PUBLISHER_COUNTRY` dict to per-agency `country` keys in `config/feeds.toml`
+  (required — a new agency cannot be added without declaring its area); the
+  home-page country filter is now derived from the config, deduplicated so
+  that Eurostat and DG EcoFin share the single "Euro area" choice. Added
+  `.badge.dgecofin` (violet). **Deploy note**: `config/` is bind-mounted, so
+  update the checkout together with the image (`git pull && docker compose up -d`) —
+  a config without `country` keys now fails fast. Existing DG EcoFin records
+  need a one-off backfill:
+  `db.processed_releases.updateMany({publisher: "dgecofin"}, {$set: {country: "Euro area"}})`.
+- **0.6.5**: Eurostat release calendar via working ICS subscription URL.
 - **0.6.4**: Fixed processing crash on every successful extraction (NameError on
   the country log line) and on schema-validation failures — outlines-cascade
   returns the raw response text when the LLM output fails validation, which is

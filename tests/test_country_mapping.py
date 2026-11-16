@@ -1,11 +1,9 @@
-"""Tests for the deterministic publisher→country mapping."""
+"""Tests for the config-driven publisher→country attribution."""
 
 from __future__ import annotations
 
-import tomllib
-from pathlib import Path
-
-from congiuntura_live.processor import PUBLISHER_COUNTRY
+from congiuntura_live.processor import ReleaseProcessor
+from congiuntura_live.settings import ProcessingConfig, load_feeds_config
 
 EXPECTED = {
     "eurostat": "Euro area",
@@ -14,29 +12,38 @@ EXPECTED = {
     "insee": "France",
     "destatis": "Germany",
     "cso": "Ireland",
+    "dgecofin": "Euro area",
 }
 
 
+def _agencies():
+    return load_feeds_config("config/feeds.toml")
+
+
 def test_mapping_values():
-    assert PUBLISHER_COUNTRY == EXPECTED
+    agencies = _agencies()
+    assert {slug: cfg.country for slug, cfg in agencies.items()} == EXPECTED
+
+
+def test_every_agency_declares_a_country():
+    """Coverage guard: an agency without a country key fails config load."""
+    for slug, agency in _agencies().items():
+        assert agency.country, f"{slug} has no country in feeds.toml"
 
 
 def test_no_other_option():
     """'Other' is never a valid derived country."""
-    assert "Other" not in PUBLISHER_COUNTRY.values()
+    assert "Other" not in {cfg.country for cfg in _agencies().values()}
 
 
-def test_countries_are_unique():
-    assert len(set(PUBLISHER_COUNTRY.values())) == len(PUBLISHER_COUNTRY)
+def test_filter_choices_are_deduplicated():
+    """Several agencies may share an area (Eurostat + DG EcoFin) — the
+    filter dropdown must list each area once, in TOML order."""
+    choices = list(dict.fromkeys(cfg.country for cfg in _agencies().values()))
+    assert choices == ["Euro area", "Italy", "Spain", "France", "Germany", "Ireland"]
 
 
 def test_unknown_publisher_maps_to_empty():
-    assert PUBLISHER_COUNTRY.get("unknown-agency", "") == ""
-
-
-def test_every_configured_publisher_is_mapped():
-    """Coverage guard: adding a feed agency without a country mapping fails here."""
-    feeds = tomllib.loads((Path(__file__).parent.parent / "config" / "feeds.toml").read_text())
-    agency_slugs = {k for k, v in feeds.items() if isinstance(v, dict) and "feeds" in v}
-    assert agency_slugs, "no agencies found in feeds.toml — parser drifted"
-    assert agency_slugs == set(PUBLISHER_COUNTRY)
+    processor = ReleaseProcessor(ProcessingConfig())
+    assert processor.country_for("unknown-agency") == ""
+    assert processor.country_for("dgecofin") == "Euro area"
