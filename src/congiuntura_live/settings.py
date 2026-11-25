@@ -19,6 +19,7 @@ class Settings(BaseSettings):
 
     mongodb_url: str = "mongodb://localhost:27017"
     mongodb_database: str = "congiuntura"
+    agent_mongodb_url: str = ""
 
 
 # ─── App config from config/app.toml ──────────────────────────
