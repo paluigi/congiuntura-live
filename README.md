@@ -94,7 +94,7 @@ service, so you only need to set the LLM keys to enable processing. See
 ### 3. Run with Docker Compose
 
 Docker Compose pulls the prebuilt multi-arch image
-(`paluigi/congiuntura-live:0.7.0`, `linux/amd64` + `linux/arm64`) from Docker Hub —
+(`paluigi/congiuntura-live:0.8.0`, `linux/amd64` + `linux/arm64`) from Docker Hub —
 no local build required:
 
 ```bash
@@ -103,6 +103,8 @@ docker compose up -d
 
 - **Web interface:** http://localhost:8000
 - **MongoDB:** reachable as `mongo:27017` inside the compose network (not published to the host; data persisted to named volume)
+- **congiuntura-agent** (optional): the static agent bundle runs in this stack behind
+  the `agent` profile — see [Serving the agent bundle](#serving-the-agent-bundle-optional)
 
 ### 4. Verify
 
@@ -226,7 +228,7 @@ LLM7_API_KEY=your-llm7-key-here
 GROQ_API_KEY=your-groq-key-here
 ```
 
-### MCP agent endpoint (new in 0.6.0)
+### MCP agent endpoint (new in 0.8.0)
 
 The app exposes a **read-only MCP (Model Context Protocol) server** at `/mcp`
 (JSON-RPC 2.0, Streamable HTTP) so browser-run agent networks — e.g. the
@@ -250,13 +252,42 @@ production** with a read-only Mongo user so a bug in the MCP layer can never
 write to the database:
 
 ```bash
-# create the read-only user (prompts for a generated password via env)
+# create the read-only user — the compose `mongo` service runs without
+# authorization, so no admin login is needed. The script drops and recreates
+# the user, so re-running it rotates the password.
 AGENT_RO_PASSWORD=$(openssl rand -hex 16) docker exec -i -e AGENT_RO_PASSWORD mongo \
-  mongosh --quiet -u <admin> -p <adminpass> --authenticationDatabase admin \
-  < scripts/create_agent_ro_user.js
-# then add to .env:
+  mongosh --quiet < scripts/create_agent_ro_user.js
+# then add to .env and recreate the app (create the user FIRST: the app
+# authenticates as agent_ro and fails until the user exists):
 # AGENT_MONGODB_URL=mongodb://agent_ro:<pass>@mongo:27017/congiuntura?authSource=congiuntura
 ```
+
+If your MongoDB enforces authorization, add
+`-u <admin> -p <adminpass> --authenticationDatabase admin` to the `mongosh` call.
+The other way round matters too: as long as mongod runs **without** `--auth` (the
+compose default), the `read` role is recorded but not enforced — any connection
+that skips authentication can still write. It only becomes a real guard once
+authorization is enabled.
+
+### Serving the agent bundle (optional)
+
+The `agent` Compose profile adds the
+[congiuntura-agent](https://github.com/paluigi-moltis/congiuntura-agent) static
+bundle (`paluigi/congiuntura-agent:0.1.0`, multi-arch) as an nginx container to
+this stack. It publishes no port: it joins the Docker network your reverse proxy
+(Nginx Proxy Manager) already uses to reach the app, and the proxy forwards to
+`congiuntura-agent:80`. In `.env`:
+
+```env
+COMPOSE_PROFILES=agent
+NPM_NETWORK=<name of that existing network>
+```
+
+Then `docker compose up -d` starts `mongo`, `app` and `congiuntura-agent`
+together. Without the profile the stack is unchanged. Step-by-step runbook
+(NPM proxy host, DNS, verification, rollback):
+[`deploy/DEPLOY.md`](https://github.com/paluigi-moltis/congiuntura-agent/blob/main/deploy/DEPLOY.md)
+in the agent repo.
 
 ---
 
@@ -420,7 +451,7 @@ congiuntura-live/
 │   └── test_scraper.py          # Scraper fallback + live extraction tests
 ├── .dockerignore                # Excludes .env/.git/.venv from the build context
 ├── Dockerfile                   # Multi-stage build
-├── docker-compose.yml           # Pulls paluigi/congiuntura-live + MongoDB
+├── docker-compose.yml           # Pulls paluigi/congiuntura-live + MongoDB (+ congiuntura-agent, `agent` profile)
 ├── pyproject.toml
 ├── PLAN.md
 └── README.md
@@ -436,6 +467,13 @@ MIT © Luigi Palumbo
 
 ## Change Log
 
+- **0.8.0**: Read-only **MCP server** at `/mcp` (JSON-RPC 2.0, Streamable HTTP)
+  with six tools (`search_releases`, `get_latest_releases`, `sentiment_summary`,
+  `get_upcoming_releases`, `get_ff_events`, `get_pipeline_status`) for
+  browser-run agent networks, backed by a dedicated read-only Mongo user via
+  `AGENT_MONGODB_URL`. Compose now pins `0.8.0` and gains an optional
+  `congiuntura-agent` service behind the `agent` profile (static bundle,
+  `paluigi/congiuntura-agent:0.1.0`, attached to the existing `NPM_NETWORK`).
 - **0.7.0**: Added **DG EcoFin** (European Commission — BCS press releases and
   Flash consumer surveys) as 7th monitored source, attributed to the
   **Euro area**. Geo-area attribution moved from the hardcoded

@@ -14,7 +14,7 @@ services:
 
   # ─── Application ───────────────────────────────────────────
   app:
-    image: paluigi/congiuntura-live:0.7.0
+    image: paluigi/congiuntura-live:0.8.0
     container_name: congiuntura-app
     restart: unless-stopped
     ports:
@@ -38,5 +38,26 @@ services:
       mongo:
         condition: service_healthy
 
+  # ─── congiuntura-agent (static bundle, optional) ───────────
+  # Enabled by the `agent` profile (COMPOSE_PROFILES=agent in .env, or
+  # `docker compose --profile agent up -d`). Joins the network the reverse
+  # proxy (Nginx Proxy Manager) lives on — set NPM_NETWORK in .env to its
+  # name. Publishes no port; reach it as http://congiuntura-agent:80.
+  congiuntura-agent:
+    image: paluigi/congiuntura-agent:0.1.0
+    container_name: congiuntura-agent
+    restart: unless-stopped
+    profiles:
+      - agent
+    networks:
+      - proxy
+
 volumes:
   mongo_data:
+
+networks:
+  # Pre-existing network shared with the reverse proxy (only used by the
+  # `agent` profile, so a plain `docker compose up -d` works without it).
+  proxy:
+    external: true
+    name: ${NPM_NETWORK:-proxy}
