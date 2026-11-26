@@ -215,6 +215,7 @@ entries = [
 |----------|---------|---------|
 | `MONGODB_URL` | MongoDB connection string | `mongodb://localhost:27017` |
 | `MONGODB_DATABASE` | Database name | `congiuntura` |
+| `AGENT_MONGODB_URL` | Optional read-only connection string for the MCP endpoint (`/mcp`). When set, agent tools use this credential (recommended: the `agent_ro` user — see `scripts/create_agent_ro_user.js`); when unset, `/mcp` falls back to `MONGODB_URL` | — |
 | `LLM7_API_KEY` | LLM7 API key (outlines-cascade) | — |
 | `GROQ_API_KEY` | Groq API key (outlines-cascade) | — |
 
@@ -223,6 +224,38 @@ For local Docker Compose, put them in a gitignored `.env`:
 ```env
 LLM7_API_KEY=your-llm7-key-here
 GROQ_API_KEY=your-groq-key-here
+```
+
+### MCP agent endpoint (new in 0.6.0)
+
+The app exposes a **read-only MCP (Model Context Protocol) server** at `/mcp`
+(JSON-RPC 2.0, Streamable HTTP) so browser-run agent networks — e.g. the
+agentic sibling site [congiuntura-agent](https://github.com/paluigi-moltis/congiuntura-agent) —
+can ground answers in live data. Six tools:
+
+| Tool | Purpose |
+|------|---------|
+| `search_releases` | Filter processed releases by topic/country/sentiment/publisher/date |
+| `get_latest_releases` | Most recent processed releases |
+| `sentiment_summary` | Aggregate counts by sentiment/topic/country/publisher |
+| `get_upcoming_releases` | NSO statistical releases due within N days (≤14) |
+| `get_ff_events` | ForexFactory EUR events with actual/forecast/previous |
+| `get_pipeline_status` | Data freshness (last pipeline runs) |
+
+Safety properties: tool args are schema-validated server-side; limits and
+look-ahead windows are capped regardless of caller arguments; validation
+failures return MCP `isError` results (never throw); CORS is restricted to the
+agent subdomain + localhost dev origins. **Set `AGENT_MONGODB_URL` in
+production** with a read-only Mongo user so a bug in the MCP layer can never
+write to the database:
+
+```bash
+# create the read-only user (prompts for a generated password via env)
+AGENT_RO_PASSWORD=$(openssl rand -hex 16) docker exec -i -e AGENT_RO_PASSWORD mongo \
+  mongosh --quiet -u <admin> -p <adminpass> --authenticationDatabase admin \
+  < scripts/create_agent_ro_user.js
+# then add to .env:
+# AGENT_MONGODB_URL=mongodb://agent_ro:<pass>@mongo:27017/congiuntura?authSource=congiuntura
 ```
 
 ---

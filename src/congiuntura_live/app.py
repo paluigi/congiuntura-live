@@ -17,6 +17,7 @@ from starlette.background import BackgroundTask
 from starlette.responses import Response
 
 from .feed_reader import FeedReader
+from .mcp_server import McpToolRegistry, create_mcp_repo, register_mcp
 from .processor import ReleaseProcessor
 from .repository import PressReleaseRepository
 from .scheduler import FeedPoller, ProcessingPoller
@@ -113,6 +114,9 @@ async def lifespan(app: FastAPI):
     # Last-update tracker (helper collection) + WebSocket broadcast on change
     _status_repo = UpdateStatusRepository(settings.mongodb_url, settings.mongodb_database)
 
+    # Read-only MCP registry for agentic clients (congiuntura-agent etc.)
+    app.state.mcp_registry = McpToolRegistry(await create_mcp_repo(settings))
+
     async def _broadcast_update_status() -> None:
         """Render and push indicator fragments to subscribed clients."""
         from .ws_hub import render_indicator_fragment
@@ -195,8 +199,11 @@ async def lifespan(app: FastAPI):
     logger.info("Application stopped")
 
 
-app = FastAPI(title="Congiuntura Live", version="0.7.0", lifespan=lifespan)
+app = FastAPI(title="Congiuntura Live", version="0.8.0", lifespan=lifespan)
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+# Read-only MCP endpoint for agentic clients (CORS: agent subdomain + localhost dev)
+register_mcp(app)
 
 # Serve vendored static assets (htmx.min.js etc.)
 app.mount("/static", StaticFiles(directory=str(TEMPLATES_DIR / "static")), name="static")
